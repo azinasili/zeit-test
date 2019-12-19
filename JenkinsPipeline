@@ -1,0 +1,54 @@
+#!/usr/bin/env groovy
+@Library('jenkins-helpers')_
+
+def nodeImage = 'node:11-alpine'
+
+def registryURL = "${REGISTRY_URL}"
+def isMasterBranch = env.BRANCH_NAME == 'master'
+def isPrHeadBranch = env.BRANCH_NAME.startsWith('PR-') && env.BRANCH_NAME.endsWith('-head')
+def isPrMergeBranch = env.BRANCH_NAME.startsWith('PR-') && env.BRANCH_NAME.endsWith('-merge')
+
+def deploy = isMasterBranch || isPrHeadBranch
+
+if (!(isMasterBranch || isPrHeadBranch || isPrMergeBranch)) {
+  echo 'Builds only completed for master and PR branches'
+  return
+}
+try {
+
+  def helloNextImage
+
+  node {
+    cleanWs()
+    checkout scm
+    def imageTag = spinnakerTag(imageName: "shoprunner/hellonext")
+
+    docker.image(nodeImage).inside('-u root') {
+      stage('Install Dependencies') {
+        sh('npm install')
+      }
+
+      stage('Run build script') {
+        sh('npm run build')
+      }
+    }
+
+    stage('Build Images') {
+        helloNextImage = docker.build(imageTag)
+    }
+
+    if (deploy) {
+      stage('Push Images') {
+        docker.withRegistry("https://${REGISTRY_URL}", 'artifactory_jenkins') {
+          helloNextImage.push()
+        }
+      }
+    }
+  }
+} catch (e) {
+  println 'FAILED'
+  println 'exception in build: ' + e
+  throw e
+} finally {
+  println 'BUILD FINISHED'
+}
