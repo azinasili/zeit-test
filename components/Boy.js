@@ -1,8 +1,8 @@
 import React from 'react'
 
 const imageStyle = {
-    width: 150,
-    height: 150
+    width: 600,
+    height: 600
 }
 
 const Boy = props => (
