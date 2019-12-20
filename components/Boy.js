@@ -10,7 +10,7 @@ const Boy = props => (
        <h1>{props.data.title}</h1>
        <h4>{props.data.age}</h4>
        <p>{props.data.description}</p>
-       <img src={props.data.image.fields.file.url} style={imageStyle}/>
+       <img src={props.data.title === 'good' ? 'http://placekitten.com/g/600/600' : 'https://www.placecage.com/c/600/600'} style={imageStyle}/>
    </div>
 )
 
